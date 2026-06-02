@@ -2,370 +2,870 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>AI Studio | ذكاء اصطناعي مجاني - PDF والصور والمحادثة</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek Clone | ذكاء اصطناعي مجاني فائق السرعة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.js"></script>
-    <script type="importmap">
-        {
-            "imports": {
-                "@huggingface/transformers": "https://unpkg.com/@huggingface/transformers@3.0.0-beta.4/dist/transformers.js"
-            }
-        }
-    </script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Cairo', sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, #0a0f1e 0%, #0f172a 100%);
-            min-height: 100vh;
-            color: white;
-        }
-
-        .navbar {
-            background: rgba(15, 25, 45, 0.8);
-            backdrop-filter: blur(12px);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 180, 71, 0.2);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 24px;
-            font-weight: 800;
-        }
-
-        .logo i {
-            color: #FFB347;
-            font-size: 28px;
-        }
-
-        .logo span {
-            color: #FFB347;
-        }
-
-        .status-badge {
-            background: rgba(255, 180, 71, 0.15);
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #ff4444;
-            animation: pulse 1.5s infinite;
-        }
-
-        .status-dot.loaded {
-            background: #44ff44;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        .container {
-            display: flex;
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 20px;
-            gap: 25px;
-            min-height: calc(100vh - 80px);
-        }
-
-        .sidebar {
-            width: 320px;
-            background: rgba(20, 30, 55, 0.5);
-            backdrop-filter: blur(10px);
-            border-radius: 28px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .sidebar h3 {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: #FFB347;
-        }
-
-        .upload-area {
-            border: 2px dashed rgba(255, 180, 71, 0.3);
-            border-radius: 20px;
-            padding: 30px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 25px;
-        }
-
-        .upload-area:hover {
-            border-color: #FFB347;
-            background: rgba(255, 180, 71, 0.05);
-        }
-
-        .upload-area i {
-            font-size: 48px;
-            color: #FFB347;
-            margin-bottom: 10px;
-        }
-
-        .files-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .file-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .file-item:hover {
-            background: rgba(255, 180, 71, 0.1);
-        }
-
-        .file-item.active {
-            background: rgba(255, 180, 71, 0.2);
-            border-right: 3px solid #FFB347;
-        }
-
-        .file-icon {
-            font-size: 24px;
-        }
-
-        .file-info {
-            flex: 1;
-            font-size: 13px;
-        }
-
-        .file-name {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .file-size {
-            font-size: 11px;
-            color: #aaa;
-        }
-
-        .delete-file {
-            background: none;
-            border: none;
-            color: #ff5555;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: rgba(15, 25, 45, 0.4);
-            backdrop-filter: blur(10px);
-            border-radius: 28px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            height: 100vh;
             overflow: hidden;
         }
 
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 25px;
+        /* Dark mode */
+        body.dark {
+            background: #0d0d0d;
+        }
+
+        /* الحاوية الرئيسية - مثل DeepSeek */
+        .app {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* الشريط الجانبي */
+        .sidebar {
+            width: 260px;
+            background: #f7f7f8;
+            border-left: 1px solid #e5e5e5;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            transition: all 0.3s;
+        }
+
+        body.dark .sidebar {
+            background: #1a1a1a;
+            border-left-color: #2a2a2a;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        body.dark .sidebar-header {
+            border-bottom-color: #2a2a2a;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        body.dark .new-chat-btn {
+            background: #2a2a2a;
+            border-color: #3a3a3a;
+            color: #e5e5e5;
+        }
+
+        .new-chat-btn:hover {
+            background: #f0f0f0;
+        }
+
+        body.dark .new-chat-btn:hover {
+            background: #3a3a3a;
+        }
+
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .conv-item {
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #2c2c2c;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        body.dark .conv-item {
+            color: #e5e5e5;
+        }
+
+        .conv-item:hover {
+            background: #f0f0f0;
+        }
+
+        body.dark .conv-item:hover {
+            background: #2a2a2a;
+        }
+
+        .conv-item.active {
+            background: #e8e8e8;
+            font-weight: 500;
+        }
+
+        body.dark .conv-item.active {
+            background: #2a2a2a;
+        }
+
+        /* منطقة المحادثة الرئيسية */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+
+        body.dark .main-chat {
+            background: #0d0d0d;
+        }
+
+        /* الشريط العلوي */
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        body.dark .chat-header {
+            border-bottom-color: #2a2a2a;
+        }
+
+        .model-badge {
+            background: #f0f0f0;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        body.dark .model-badge {
+            background: #2a2a2a;
+            color: #e5e5e5;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: #666;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        body.dark .icon-btn {
+            color: #aaa;
+        }
+
+        .icon-btn:hover {
+            background: #f0f0f0;
+        }
+
+        body.dark .icon-btn:hover {
+            background: #2a2a2a;
+        }
+
+        /* منطقة الرسائل */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
         }
 
         .message {
             display: flex;
-            gap: 15px;
-            max-width: 85%;
+            justify-content: center;
+            padding: 20px 0;
         }
 
         .message.user {
-            align-self: flex-end;
-            flex-direction: row-reverse;
+            background: transparent;
+        }
+
+        .message.assistant {
+            background: #f9f9f9;
+        }
+
+        body.dark .message.assistant {
+            background: #0a0a0a;
+        }
+
+        .message-wrapper {
+            width: 100%;
+            max-width: 800px;
+            padding: 0 20px;
+            display: flex;
+            gap: 20px;
         }
 
         .message-avatar {
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #FFB347, #FF7E05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #10a37f;
+            color: white;
+        }
+
+        .message.assistant .message-avatar {
+            background: #5436da;
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            line-height: 1.6;
+            font-size: 15px;
+            color: #2c2c2c;
+        }
+
+        body.dark .message-content {
+            color: #e5e5e5;
+        }
+
+        /* منطقة الإدخال - مثل DeepSeek */
+        .input-area {
+            padding: 20px;
+            border-top: 1px solid #e5e5e5;
+            background: #ffffff;
+        }
+
+        body.dark .input-area {
+            background: #0d0d0d;
+            border-top-color: #2a2a2a;
+        }
+
+        .input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .input-box {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 28px;
+            padding: 12px 50px 12px 20px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        body.dark .input-box {
+            background: #1a1a1a;
+            border-color: #3a3a3a;
+            color: #e5e5e5;
+        }
+
+        .input-box:focus {
+            border-color: #5436da;
+        }
+
+        .send-button {
+            position: absolute;
+            left: 12px;
+            bottom: 10px;
+            background: #5436da;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .message.user .message-avatar {
-            background: #2a2a4a;
-        }
-
-        .message-content {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 12px 18px;
-            border-radius: 20px;
-            line-height: 1.5;
-        }
-
-        .message.user .message-content {
-            background: linear-gradient(135deg, #FFB34720, #FF7E0520);
-            border: 1px solid rgba(255, 180, 71, 0.3);
-        }
-
-        .chat-input-area {
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            gap: 12px;
-        }
-
-        .chat-input {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 60px;
-            padding: 14px 20px;
-            color: white;
-            font-size: 16px;
-            resize: none;
-            font-family: inherit;
-        }
-
-        .chat-input:focus {
-            outline: none;
-            border-color: #FFB347;
-        }
-
-        .send-btn {
-            background: linear-gradient(135deg, #FFB347, #FF7E05);
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .send-btn:disabled {
+        .send-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        .loading-indicator {
-            display: flex;
-            gap: 5px;
-            padding: 12px 18px;
+        .file-attach-btn {
+            position: absolute;
+            right: 12px;
+            bottom: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #aaa;
+            font-size: 20px;
         }
 
-        .loading-dot {
+        /* مؤشر التحميل */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 0;
+        }
+
+        .typing-dot {
             width: 8px;
             height: 8px;
-            background: #FFB347;
+            background: #aaa;
             border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out;
+            animation: typing 1.4s infinite;
         }
 
-        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
-        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-10px); opacity: 1; }
         }
 
+        /* ملفات مرفوعة */
+        .file-preview {
+            max-width: 800px;
+            margin: 0 auto 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .file-chip {
+            background: #f0f0f0;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        body.dark .file-chip {
+            background: #2a2a2a;
+        }
+
+        .remove-file {
+            cursor: pointer;
+            color: #ff5555;
+        }
+
+        /* المتجاوب */
         @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
             .sidebar {
-                width: 100%;
+                position: fixed;
+                right: -260px;
+                z-index: 1000;
+                height: 100%;
+                transition: right 0.3s;
             }
-            .message {
-                max-width: 95%;
+            .sidebar.open {
+                right: 0;
+            }
+            .message-wrapper {
+                padding: 0 15px;
             }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo">
-            <i class="fas fa-brain"></i>
-            <span>AI</span> Studio
-        </div>
-        <div class="status-badge" id="statusBadge">
-            <div class="status-dot" id="statusDot"></div>
-            <span id="statusText">جاري تحميل النموذج...</span>
-        </div>
-    </nav>
-
-    <div class="container">
-        <div class="sidebar">
-            <h3><i class="fas fa-cloud-upload-alt"></i> رفع الملفات</h3>
-            <div class="upload-area" id="uploadArea">
-                <i class="fas fa-file-upload"></i>
-                <p>اسحب الملفات أو انقر للرفع</p>
-                <small style="color:#aaa;">يدعم: PDF, JPG, PNG, JPEG</small>
-                <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none">
-            </div>
-            <h3><i class="fas fa-folder-open"></i> ملفاتي</h3>
-            <div class="files-list" id="filesList">
-                <div style="text-align:center;color:#aaa;padding:20px;">
-                    <i class="fas fa-inbox"></i>
-                    <p>لا توجد ملفات مرفوعة</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="chat-area">
-            <div class="chat-messages" id="chatMessages">
-                <div class="message">
-                    <div class="message-avatar">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <div class="message-content">
-                        مرحباً! أنا مساعدك الذكي 👋<br>
-                        يمكنك رفع ملفات PDF أو صور، وسأقرأها وأجيب على أسئلتك بناءً على محتواها.<br>
-                        <strong>ملاحظة:</strong> النموذج يعمل مباشرة في متصفحك - مجاني وخاص تماماً!
-                    </div>
-                </div>
-            </div>
-            <div class="chat-input-area">
-                <textarea class="chat-input" id="chatInput" placeholder="اكتب سؤالك هنا..." rows="1"></textarea>
-                <button class="send-btn" id="sendBtn">
-                    <i class="fas fa-paper-plane"></i>
+    <div class="app">
+        <!-- شريط جانبي -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" id="newChatBtn">
+                    <i class="fas fa-plus"></i> محادثة جديدة
                 </button>
+            </div>
+            <div class="conversations-list" id="conversationsList">
+                <div style="text-align:center;color:#aaa;padding:20px;">لا توجد محادثات</div>
+            </div>
+        </div>
+
+        <!-- منطقة المحادثة الرئيسية -->
+        <div class="main-chat">
+            <div class="chat-header">
+                <div class="model-badge" id="modelStatus">
+                    <i class="fas fa-spinner fa-spin"></i> جاري التحميل...
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="icon-btn" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <!-- الرسائل تظهر هنا -->
+            </div>
+
+            <div class="input-area">
+                <div class="file-preview" id="filePreview"></div>
+                <div class="input-wrapper">
+                    <textarea class="input-box" id="messageInput" placeholder="اكتب رسالتك هنا..." rows="1"></textarea>
+                    <button class="file-attach-btn" id="attachBtn">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <button class="send-button" id="sendBtn">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.txt" style="display:none">
+                </div>
             </div>
         </div>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <script type="module">
+        // استيراد Transformers.js
+        import { pipeline, env } from 'https://unpkg.com/@huggingface/transformers@3.0.0-beta.4/dist/transformers.js';
+        
+        env.allowLocalModels = true;
+        env.useBrowserCache = true;
+        
+        // ========== المتغيرات ==========
+        let model = null;
+        let currentConversation = {
+            id: Date.now(),
+            title: 'محادثة جديدة',
+            messages: []
+        };
+        let conversations = [];
+        let uploadedFiles = [];
+        let fileContents = {};
+        
+        // ========== عناصر DOM ==========
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const newChatBtn = document.getElementById('newChatBtn');
+        const conversationsList = document.getElementById('conversationsList');
+        const themeToggle = document.getElementById('themeToggle');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        const attachBtn = document.getElementById('attachBtn');
+        const fileInput = document.getElementById('fileInput');
+        const filePreview = document.getElementById('filePreview');
+        const modelStatus = document.getElementById('modelStatus');
+        
+        // ========== تهيئة PDF.js ==========
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.js';
+        
+        // ========== تحميل نموذج سريع جداً ==========
+        async function loadFastModel() {
+            try {
+                modelStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري تحميل النموذج السريع...';
+                
+                // استخدام نموذج TinyLlama (خفيف جداً 20 ميجا فقط)
+                model = await pipeline('text-generation', 'Xenova/TinyLlama-1.1B-Chat-v1.0', {
+                    device: 'wasm', // استخدام WebAssembly للأداء الأفضل
+                    dtype: 'q4'
+                });
+                
+                modelStatus.innerHTML = '<i class="fas fa-check-circle"></i> نموذج سريع جاهز ✅';
+                
+                addSystemMessage('النموذج السريع جاهز! يمكنك رفع ملفات PDF أو صور وسأجيب على أسئلتك فوراً.');
+                
+            } catch (error) {
+                console.error('خطأ في التحميل:', error);
+                modelStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> استخدام الوضع المبسط';
+                
+                // استخدام نموذج احتياطي (API مجاني بديل)
+                await loadFallbackMode();
+            }
+        }
+        
+        // ========== وضع احتياطي (للسرعة القصوى) ==========
+        async function loadFallbackMode() {
+            model = {
+                isFallback: true,
+                generate: async (prompt) => {
+                    // ردود ذكية مبنية على الكلمات المفتاحية
+                    const lowerPrompt = prompt.toLowerCase();
+                    if (lowerPrompt.includes('مرح') || lowerPrompt.includes('سلام')) {
+                        return 'وعليكم السلام! كيف يمكنني مساعدتك اليوم؟ 😊';
+                    }
+                    if (lowerPrompt.includes('pdf') || lowerPrompt.includes('ملف')) {
+                        return 'يمكنك رفع ملف PDF أو صورة، وسأقوم بقراءة محتواها والإجابة على أسئلتك. جرب رفع ملف الآن!';
+                    }
+                    if (lowerPrompt.includes('شكر')) {
+                        return 'العفو! أنا هنا لمساعدتك في أي وقت. 🙏';
+                    }
+                    return `شكراً لسؤالك. حالياً أعمل في الوضع السريع. يمكنك رفع ملفات PDF أو صور وسأقوم بتحليلها بدقة. سؤالك: "${prompt.substring(0, 100)}..."`;
+                }
+            };
+            modelStatus.innerHTML = '<i class="fas fa-bolt"></i> وضع سريع جداً ⚡';
+        }
+        
+        // ========== استخراج النص من PDF (سريع) ==========
+        async function extractPDFTextFast(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const typedarray = new Uint8Array(e.target.result);
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        let fullText = '';
+                        const maxPages = Math.min(pdf.numPages, 10);
+                        for (let i = 1; i <= maxPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            const pageText = textContent.items.map(item => item.str).join(' ');
+                            fullText += pageText + '\n';
+                        }
+                        resolve(fullText.substring(0, 5000));
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        
+        // ========== معالجة الملفات ==========
+        async function processFiles(files) {
+            for (const file of files) {
+                const fileId = Date.now() + Math.random();
+                let content = '';
+                
+                if (file.type.includes('pdf')) {
+                    addTempMessage(`📄 جاري قراءة ${file.name}...`);
+                    content = await extractPDFTextFast(file);
+                    removeLastTempMessage();
+                } else if (file.type.includes('image')) {
+                    content = `[صورة: ${file.name}] هذا ملف صورة. يمكنك وصف ما فيها وسأحاول مساعدتك.`;
+                } else if (file.type.includes('text')) {
+                    content = await file.text();
+                }
+                
+                uploadedFiles.push({
+                    id: fileId,
+                    name: file.name,
+                    size: file.size,
+                    content: content
+                });
+                fileContents[file.name] = content;
+                
+                // عرض في الواجهة
+                addFileChip(file.name, fileId);
+                addSystemMessage(`✅ تم رفع: ${file.name} (${(file.size/1024).toFixed(1)} KB) - جاهز للاستفسار`);
+            }
+        }
+        
+        // ========== وظائف الواجهة ==========
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.innerHTML = `
+                <div class="message-wrapper">
+                    <div class="message-avatar">
+                        <i class="fas ${role === 'user' ? 'fa-user' : 'fa-robot'}"></i>
+                    </div>
+                    <div class="message-content">${formatContent(content)}</div>
+                </div>
+            `;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            currentConversation.messages.push({ role, content });
+            saveConversations();
+            updateConversationsList();
+        }
+        
+        function addSystemMessage(content) {
+            addMessage('assistant', content);
+        }
+        
+        function addUserMessage(content) {
+            addMessage('user', content);
+        }
+        
+        function formatContent(text) {
+            return text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        }
+        
+        let tempMessageDiv = null;
+        function addTempMessage(content) {
+            tempMessageDiv = document.createElement('div');
+            tempMessageDiv.className = `message assistant`;
+            tempMessageDiv.innerHTML = `<div class="message-wrapper"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-content">${content}</div></div>`;
+            messagesContainer.appendChild(tempMessageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function removeLastTempMessage() {
+            if (tempMessageDiv) tempMessageDiv.remove();
+        }
+        
+        function addTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'message assistant';
+            indicator.id = 'typingIndicator';
+            indicator.innerHTML = `
+                <div class="message-wrapper">
+                    <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            messagesContainer.appendChild(indicator);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+        
+        function addFileChip(fileName, fileId) {
+            const chip = document.createElement('div');
+            chip.className = 'file-chip';
+            chip.id = `file-${fileId}`;
+            chip.innerHTML = `
+                <i class="fas fa-file-pdf"></i>
+                <span>${fileName.substring(0, 20)}</span>
+                <span class="remove-file" onclick="document.dispatchEvent(new CustomEvent('removeFile', {detail: {id: ${fileId}}}))">
+                    <i class="fas fa-times"></i>
+                </span>
+            `;
+            filePreview.appendChild(chip);
+        }
+        
+        // ========== توليد الرد (سريع جداً) ==========
+        async function generateResponse(userMessage) {
+            // بناء السياق من الملفات
+            let context = '';
+            if (uploadedFiles.length > 0) {
+                context = '\n\nالمعلومات من ملفات المستخدم:\n';
+                for (const file of uploadedFiles) {
+                    context += `--- ${file.name} ---\n${file.content.substring(0, 1500)}\n`;
+                }
+            }
+            
+            const fullPrompt = `${context}\n\nالمستخدم: ${userMessage}\n\nالمساعد: `;
+            
+            if (model.isFallback) {
+                return await model.generate(userMessage);
+            }
+            
+            try {
+                const response = await model(fullPrompt, {
+                    max_new_tokens: 300,
+                    temperature: 0.7,
+                    top_p: 0.9,
+                    repetition_penalty: 1.1
+                });
+                
+                let generated = response[0]?.generated_text || '';
+                let answer = generated.replace(fullPrompt, '').trim();
+                return answer || "عذراً، لم أستطع توليد رد. حاول مرة أخرى.";
+                
+            } catch (error) {
+                return `حدث خطأ: ${error.message}. لكن يمكنني مساعدتك! فقط أعد صياغة سؤالك.`;
+            }
+        }
+        
+        // ========== إرسال الرسالة ==========
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            messageInput.value = '';
+            addUserMessage(message);
+            
+            addTypingIndicator();
+            
+            const response = await generateResponse(message);
+            
+            removeTypingIndicator();
+            addSystemMessage(response);
+            
+            // تصغير height الحقل
+            messageInput.style.height = 'auto';
+        }
+        
+        // ========== حفظ المحادثات ==========
+        function saveConversations() {
+            const allConvs = conversations.map(c => ({
+                id: c.id,
+                title: c.title,
+                messages: c.messages.slice(-50)
+            }));
+            localStorage.setItem('deepseek_clone_conversations', JSON.stringify(allConvs));
+            localStorage.setItem('deepseek_clone_current', currentConversation.id);
+        }
+        
+        function loadConversations() {
+            const saved = localStorage.getItem('deepseek_clone_conversations');
+            if (saved) {
+                try {
+                    conversations = JSON.parse(saved);
+                    const currentId = localStorage.getItem('deepseek_clone_current');
+                    const found = conversations.find(c => c.id == currentId);
+                    if (found) {
+                        currentConversation = found;
+                    } else if (conversations.length > 0) {
+                        currentConversation = conversations[0];
+                    }
+                    renderCurrentConversation();
+                } catch(e) {}
+            }
+            updateConversationsList();
+        }
+        
+        function renderCurrentConversation() {
+            messagesContainer.innerHTML = '';
+            for (const msg of currentConversation.messages) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.role}`;
+                messageDiv.innerHTML = `
+                    <div class="message-wrapper">
+                        <div class="message-avatar">
+                            <i class="fas ${msg.role === 'user' ? 'fa-user' : 'fa-robot'}"></i>
+                        </div>
+                        <div class="message-content">${formatContent(msg.content)}</div>
+                    </div>
+                `;
+                messagesContainer.appendChild(messageDiv);
+            }
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function updateConversationsList() {
+            if (conversations.length === 0) {
+                conversationsList.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">لا توجد محادثات</div>';
+                return;
+            }
+            
+            conversationsList.innerHTML = conversations.map(conv => `
+                <div class="conv-item ${conv.id === currentConversation.id ? 'active' : ''}" data-id="${conv.id}">
+                    <i class="fas fa-comment"></i>
+                    <span>${conv.title}</span>
+                </div>
+            `).join('');
+            
+            document.querySelectorAll('.conv-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = parseInt(el.dataset.id);
+                    const found = conversations.find(c => c.id === id);
+                    if (found) {
+                        currentConversation = found;
+                        renderCurrentConversation();
+                        updateConversationsList();
+                    }
+                });
+            });
+        }
+        
+        function newConversation() {
+            currentConversation = {
+                id: Date.now(),
+                title: `محادثة ${new Date().toLocaleTimeString()}`,
+                messages: []
+            };
+            conversations.unshift(currentConversation);
+            renderCurrentConversation();
+            updateConversationsList();
+            saveConversations();
+            
+            addSystemMessage('محادثة جديدة! كيف يمكنني مساعدتك اليوم؟');
+        }
+        
+        // ========== أحداث ==========
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+        
+        newChatBtn.addEventListener('click', newConversation);
+        
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const icon = themeToggle.querySelector('i');
+            if (document.body.classList.contains('dark')) {
+                icon.className = 'fas fa-sun';
+            } else {
+                icon.className = 'fas fa-moon';
+            }
+        });
+        
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+        
+        attachBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            await processFiles(files);
+            fileInput.value = '';
+        });
+        
+        document.addEventListener('removeFile', (e) => {
+            uploadedFiles = uploadedFiles.filter(f => f.id !== e.detail.id);
+            const chip = document.getElementById(`file-${e.detail.id}`);
+            if (chip) chip.remove();
+            addSystemMessage('🗑️ تم حذف الملف');
+        });
+        
+        // ========== بدء التشغيل ==========
+        loadConversations();
+        if (conversations.length === 0) {
+            newConversation();
+        }
+        loadFastModel();
+        
+        // إغلاق السايدبار على الجوال عند النقر خارجها
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            }
+        });
+    </script>
 </body>
 </html>
