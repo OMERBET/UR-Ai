@@ -3,773 +3,429 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chat | ذكاء اصطناعي فوري - بدون تحميل</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <title>Llama 3.2 AI | ذكاء اصطناعي في المتصفح</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+    <script type="importmap">
+        {
+            "imports": {
+                "@huggingface/transformers": "https://unpkg.com/@huggingface/transformers@3.0.0-beta.4/dist/transformers.js"
+            }
         }
-
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', sans-serif;
-            background: #ffffff;
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #0a0f1a);
             height: 100vh;
             overflow: hidden;
+            color: #e2e8f0;
         }
-
-        body.dark {
-            background: #0d0d0d;
-        }
-
-        .app {
-            display: flex;
-            height: 100vh;
-            width: 100%;
-        }
-
-        /* شريط جانبي أنيق */
+        .app { display: flex; height: 100%; }
         .sidebar {
             width: 280px;
-            background: #f7f7f8;
-            border-left: 1px solid #e5e5e5;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid #334155;
             display: flex;
             flex-direction: column;
-            transition: all 0.3s;
         }
-
-        body.dark .sidebar {
-            background: #1a1a1a;
-            border-left-color: #2a2a2a;
-        }
-
         .sidebar-header {
             padding: 20px;
-            border-bottom: 1px solid #e5e5e5;
+            border-bottom: 1px solid #334155;
         }
-
-        body.dark .sidebar-header {
-            border-bottom-color: #2a2a2a;
+        .logo i { color: #facc15; font-size: 28px; }
+        .logo h2 span { color: #facc15; }
+        .status-area {
+            padding: 20px;
+            border-bottom: 1px solid #334155;
         }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .logo i {
-            font-size: 28px;
-            color: #5436da;
-        }
-
-        .logo h2 {
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        body.dark .logo h2 {
-            color: white;
-        }
-
-        .new-chat-btn {
-            width: 100%;
-            background: #ffffff;
-            border: 1px solid #e5e5e5;
+        .status-badge {
+            background: #1e293b;
+            padding: 12px;
             border-radius: 12px;
-            padding: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s;
+            font-size: 13px;
+            text-align: center;
         }
-
-        body.dark .new-chat-btn {
-            background: #2a2a2a;
-            border-color: #3a3a3a;
-            color: #e5e5e5;
+        .progress-bar {
+            margin-top: 10px;
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+            overflow: hidden;
         }
-
-        .new-chat-btn:hover {
-            background: #f0f0f0;
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #facc15;
+            transition: width 0.3s;
         }
-
-        body.dark .new-chat-btn:hover {
-            background: #3a3a3a;
+        .knowledge-count {
+            font-size: 12px;
+            margin-top: 12px;
+            text-align: center;
+            color: #94a3b8;
         }
-
-        .conversations-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-        }
-
-        .conv-item {
-            padding: 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #2c2c2c;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        body.dark .conv-item {
-            color: #e5e5e5;
-        }
-
-        .conv-item:hover {
-            background: #f0f0f0;
-        }
-
-        body.dark .conv-item:hover {
-            background: #2a2a2a;
-        }
-
-        .conv-item.active {
-            background: #e8e8e8;
-            font-weight: 500;
-        }
-
-        body.dark .conv-item.active {
-            background: #2a2a2a;
-        }
-
-        /* منطقة المحادثة */
-        .main-chat {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #ffffff;
-        }
-
-        body.dark .main-chat {
-            background: #0d0d0d;
-        }
-
+        .main-chat { flex: 1; display: flex; flex-direction: column; background: rgba(10, 20, 30, 0.5); }
         .chat-header {
             padding: 16px 24px;
-            border-bottom: 1px solid #e5e5e5;
+            border-bottom: 1px solid #334155;
             display: flex;
             justify-content: space-between;
-            align-items: center;
         }
-
-        body.dark .chat-header {
-            border-bottom-color: #2a2a2a;
-        }
-
-        .model-badge {
-            background: #e8f5e9;
+        .model-name {
+            background: #1e293b;
             padding: 6px 12px;
             border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #2e7d32;
+            font-size: 12px;
         }
-
-        body.dark .model-badge {
-            background: #1e3a1e;
-            color: #4caf50;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 12px;
-        }
-
-        .icon-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 20px;
-            color: #666;
-            padding: 8px;
-            border-radius: 8px;
-        }
-
-        body.dark .icon-btn {
-            color: #aaa;
-        }
-
-        .icon-btn:hover {
-            background: #f0f0f0;
-        }
-
-        body.dark .icon-btn:hover {
-            background: #2a2a2a;
-        }
-
-        /* منطقة الرسائل */
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 0;
-        }
-
-        .message {
-            display: flex;
-            justify-content: center;
-            padding: 20px 0;
-        }
-
-        .message.user {
-            background: transparent;
-        }
-
-        .message.assistant {
-            background: #f9f9f9;
-        }
-
-        body.dark .message.assistant {
-            background: #0a0a0a;
-        }
-
-        .message-wrapper {
-            width: 100%;
-            max-width: 800px;
-            padding: 0 20px;
-            display: flex;
-            gap: 20px;
-        }
-
+        .messages-container { flex: 1; overflow-y: auto; padding: 20px; }
+        .message { display: flex; margin-bottom: 20px; }
+        .message.user { justify-content: flex-end; }
         .message-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
+            width: 36px; height: 36px; border-radius: 50%;
+            background: #facc15; display: flex; align-items: center; justify-content: center;
+            margin-left: 12px;
         }
-
-        .message.user .message-avatar {
-            background: #10a37f;
-            color: white;
-        }
-
-        .message.assistant .message-avatar {
-            background: #5436da;
-            color: white;
-        }
-
+        .message.user .message-avatar { background: #3b82f6; order: 2; margin-right: 12px; margin-left: 0; }
         .message-content {
-            flex: 1;
-            line-height: 1.6;
-            font-size: 15px;
-            color: #2c2c2c;
+            max-width: 75%;
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 10px 16px;
+            line-height: 1.5;
+            font-size: 14px;
         }
-
-        body.dark .message-content {
-            color: #e5e5e5;
-        }
-
-        /* منطقة الإدخال */
-        .input-area {
-            padding: 20px;
-            border-top: 1px solid #e5e5e5;
-            background: #ffffff;
-        }
-
-        body.dark .input-area {
-            background: #0d0d0d;
-            border-top-color: #2a2a2a;
-        }
-
-        .input-wrapper {
-            max-width: 800px;
-            margin: 0 auto;
-            position: relative;
-        }
-
+        .message.user .message-content { background: #facc15; color: #0f172a; }
+        .input-area { padding: 20px; border-top: 1px solid #334155; }
+        .input-wrapper { display: flex; gap: 12px; max-width: 800px; margin: auto; }
         .input-box {
-            width: 100%;
-            background: #ffffff;
-            border: 1px solid #e5e5e5;
-            border-radius: 28px;
-            padding: 14px 50px 14px 20px;
-            font-size: 15px;
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 40px;
+            padding: 12px 20px;
+            color: white;
             font-family: inherit;
             resize: none;
-            outline: none;
         }
-
-        body.dark .input-box {
-            background: #1a1a1a;
-            border-color: #3a3a3a;
-            color: #e5e5e5;
-        }
-
-        .input-box:focus {
-            border-color: #5436da;
-        }
-
-        .send-button {
-            position: absolute;
-            left: 12px;
-            bottom: 10px;
-            background: #5436da;
+        .send-btn {
+            background: #facc15;
             border: none;
-            width: 36px;
-            height: 36px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             cursor: pointer;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
-
-        .send-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .typing-indicator {
-            display: flex;
-            gap: 4px;
-            padding: 12px 0;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: #aaa;
-            border-radius: 50%;
-            animation: typing 1.4s infinite;
-        }
-
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-            30% { transform: translateY(-10px); opacity: 1; }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                right: -280px;
-                z-index: 1000;
-                height: 100%;
-            }
-            .sidebar.open {
-                right: 0;
-            }
-            .message-wrapper {
-                padding: 0 15px;
-            }
-        }
+        .typing-dots { display: flex; gap: 4px; padding: 8px; }
+        .dot { width: 6px; height: 6px; background: #facc15; border-radius: 50%; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+        pre { background: #00000066; padding: 8px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
     </style>
 </head>
 <body>
-    <div class="app">
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <i class="fas fa-bolt"></i>
-                    <h2>AI<span style="color:#5436da;">Chat</span></h2>
-                </div>
-                <button class="new-chat-btn" id="newChatBtn">
-                    <i class="fas fa-plus"></i> محادثة جديدة
-                </button>
-            </div>
-            <div class="conversations-list" id="conversationsList">
-                <div style="text-align:center;color:#aaa;padding:20px;">لا توجد محادثات</div>
+<div class="app">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+                <h2>Llama <span>3.2</span></h2>
             </div>
         </div>
-
-        <div class="main-chat">
-            <div class="chat-header">
-                <div class="model-badge" id="modelStatus">
-                    <i class="fas fa-check-circle"></i> جاهز فوراً ⚡
-                </div>
-                <div class="header-actions">
-                    <button class="icon-btn" id="themeToggle">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <button class="icon-btn" id="sidebarToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
+        <div class="status-area">
+            <div class="status-badge" id="statusBadge">
+                <i class="fas fa-spinner fa-pulse"></i> جاري تحميل النموذج...
+            </div>
+            <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="knowledge-count" id="knowledgeCount">⚡ Llama 3.2 | يعمل في المتصفح</div>
+        </div>
+    </div>
+    <div class="main-chat">
+        <div class="chat-header">
+            <div class="model-name"><i class="fas fa-microchip"></i> Llama 3.2 1B Instruct</div>
+            <div><i class="fas fa-globe"></i> يعمل بدون إنترنت بعد التحميل الأول</div>
+        </div>
+        <div class="messages-container" id="messagesContainer">
+            <div class="message assistant">
+                <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                <div class="message-content">
+                    <strong>🦙 مرحباً! أنا Llama 3.2 - نموذج ذكاء اصطناعي من Meta</strong><br><br>
+                    ✅ <strong>يعمل مباشرة في متصفحك</strong> (لا يحتاج خادم)<br>
+                    ✅ <strong>التحميل مرة واحدة فقط</strong> (~100MB)، ثم يعلم دون إنترنت<br>
+                    ✅ <strong>يفهم العربية والإنجليزية</strong><br>
+                    ✅ <strong>يجيب على أي سؤال، يحل معادلات، يكتب كود</strong><br><br>
+                    <span style="color:#facc15">💬 جرب: "ما هو الذكاء الاصطناعي؟" أو "حل 2x+5=13"</span>
                 </div>
             </div>
-
-            <div class="messages-container" id="messagesContainer">
-                <div class="message assistant">
-                    <div class="message-wrapper">
-                        <div class="message-avatar">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <div class="message-content">
-                            <strong>مرحباً! 👋</strong><br><br>
-                            أنا مساعد ذكي يعمل فوراً بدون تحميل أي شيء.<br>
-                            فقط اكتب سؤالك وسأجيبك مباشرة! 🚀<br><br>
-                            <small>✨ مجاني بالكامل - يعمل عبر API سحابي</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="input-area">
-                <div class="input-wrapper">
-                    <textarea class="input-box" id="messageInput" placeholder="اكتب سؤالك هنا..." rows="1"></textarea>
-                    <button class="send-button" id="sendBtn">
-                        <i class="fas fa-arrow-up"></i>
-                    </button>
-                </div>
+        </div>
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea id="messageInput" class="input-box" placeholder="اسأل Llama أي شيء..." rows="1"></textarea>
+                <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        // ========== إعدادات ==========
-        let currentConversation = {
-            id: Date.now(),
-            title: 'محادثة جديدة',
-            messages: []
-        };
-        let conversations = [];
-        let isWaiting = false;
-
-        // ========== API مجاني وسريع ==========
-        // استخدام Cloudflare Worker AI (مجاني بالكامل)
-        // أو استخدام خدمة بديلة مفتوحة المصدر
-        
-        async function callAIService(message, history) {
-            try {
-                // الخيار 1: استخدام API مجاني من Cloudflare (يحتاج مفتاح)
-                // للعرض، سنستخدم خدمة مجانية مفتوحة
-        
-                // خيار مؤقت: استخدام خدمة مجانية من Hugging Face (بدون مفتاح لبعض النماذج)
-                const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        inputs: message,
-                        parameters: {
-                            max_length: 200,
-                            temperature: 0.7,
-                            do_sample: true
-                        }
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.generated_text) {
-                        return data.generated_text;
-                    }
-                }
-                
-                // إذا فشل API، نستخدم ردود ذكية محلية
-                return getLocalResponse(message);
-                
-            } catch (error) {
-                console.log('API error, using local fallback:', error);
-                return getLocalResponse(message);
+<script type="module">
+    import { pipeline, env } from '@huggingface/transformers';
+    
+    env.allowLocalModels = true;
+    env.useBrowserCache = true;
+    
+    // ------------------ تحميل نموذج Llama 3.2 ------------------
+    let model = null;
+    let modelReady = false;
+    let isGenerating = false;
+    
+    const statusDiv = document.getElementById('statusBadge');
+    const progressFill = document.getElementById('progressFill');
+    const messagesDiv = document.getElementById('messagesContainer');
+    const inputField = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    // محاكاة تقدم التحميل
+    let progressInterval;
+    function startProgressSimulation() {
+        let progress = 0;
+        progressInterval = setInterval(() => {
+            if (progress < 90) {
+                progress += Math.random() * 10;
+                progressFill.style.width = Math.min(progress, 90) + '%';
             }
-        }
-        
-        // ردود ذكية محلية (بدون نموذج، تعتمد على الكلمات المفتاحية)
-        function getLocalResponse(message) {
-            const msg = message.toLowerCase();
+        }, 500);
+    }
+    function completeProgress() {
+        if (progressInterval) clearInterval(progressInterval);
+        progressFill.style.width = '100%';
+        setTimeout(() => { progressFill.style.width = '0%'; }, 1000);
+    }
+    
+    async function loadLlamaModel() {
+        try {
+            startProgressSimulation();
+            statusDiv.innerHTML = '<i class="fas fa-cloud-download-alt"></i> جاري تحميل Llama 3.2... (المرة الأولى فقط)';
             
-            // أسئلة عامة
-            if (msg.includes('مرح') || msg.includes('السلام') || msg.includes('هلا')) {
-                return "وعليكم السلام ورحمة الله! 🌟 كيف يمكنني مساعدتك اليوم؟";
-            }
-            
-            if (msg.includes('كيف حال') || msg.includes('شلونك')) {
-                return "أنا بخير، شكراً لسؤالك! 🎉 أنا هنا لمساعدتك في أي شيء تحتاجه.";
-            }
-            
-            if (msg.includes('شكر') || msg.includes('جزاك')) {
-                return "العفو! 🙏 أنا سعيد بمساعدتك. هل هناك شيء آخر يمكنني فعله؟";
-            }
-            
-            if (msg.includes('اسم') && msg.includes('ك')) {
-                return "اسمي AI Chat، مساعد ذكي يعمل فوراً بدون تحميل! 🤖 أنا هنا لخدمتك.";
-            }
-            
-            if (msg.includes('ماذا تستطيع') || msg.includes('ماذا تفعل')) {
-                return "يمكنني: \n✅ الإجابة على أسئلتك\n✅ مساعدتك في البحث\n✅ الترجمة\n✅ شرح المفاهيم\n✅ حل المشكلات\n✅ وكل ما تحتاجه! فقط اسأل. 💪";
-            }
-            
-            if (msg.includes('طقس') || msg.includes('الجو')) {
-                return "للتأكد من الطقس بدقة، أنصحك بفتح تطبيق الطقس المحلي. ولكن بشكل عام، إذا كنت في الشرق الأوسط، الجو حار صيفاً ومعتدل شتاءً! 🌡️";
-            }
-            
-            if (msg.includes('وقت') || msg.includes('ساعة')) {
-                const now = new Date();
-                return `🕐 الآن الساعة ${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')} بتوقيت جهازك.`;
-            }
-            
-            if (msg.includes('ذكاء اصطناعي') || msg.includes('AI')) {
-                return "الذكاء الاصطناعي هو محاكاة للذكاء البشري في الآلات. وأنا مثال عليه! 🧠 أنا أعمل عبر API سحابي، لذلك لا تحتاج لتحميل أي نماذج على جهازك.";
-            }
-            
-            if (msg.includes('برمجة') || msg.includes('كود') || msg.includes('programming')) {
-                return "أستطيع مساعدتك في البرمجة! 💻 اسألني عن أي لغة (Python, JavaScript, HTML, CSS) وسأقدم لك أمثلة وحلول. جرب أن تقول 'كود بايثون لجمع رقمين' مثلاً.";
-            }
-            
-            if (msg.includes('ترجم') || msg.includes('translate')) {
-                return "أستطيع الترجمة! 🌍 اكتب 'ترجم: [النص] إلى [اللغة]' وسأترجم لك فوراً. مثال: 'ترجم: مرحبا بالعالم إلى الإنجليزية'";
-            }
-            
-            if (msg.includes('نكتة') || msg.includes('اضحك')) {
-                const jokes = [
-                    "😂 مرة واحد سأل الذكاء الاصطناعي: 'شو الفرق بينك وبين الإنسان؟' قال: 'الإنسان يغلط وأنا أتعلم من أغلاطه!'",
-                    "😄 مبرمج يسأل AI: 'كيف أعرف إذا كانت زوجتي تحبني؟' قال: 'جرب تقفل الواي فاي وشوف ردة فعلها!'",
-                    "🤣 مرة AI دخل مسابقة للذكاء... طلع الأول! بس اكتشفوا بعدين إنه غش لأنه كان متصل بالنت!"
-                ];
-                return jokes[Math.floor(Math.random() * jokes.length)];
-            }
-            
-            if (msg.includes('رياضيات') || msg.includes('حساب')) {
-                return "أستطيع حل المسائل الرياضية! ✏️ اكتب لي المسألة وسأحلها لك. مثال: 'كم 25 × 4؟' أو 'جذر 144'";
-            }
-            
-            // رد افتراضي ذكي
-            const responses = [
-                `هذا سؤال جميل! 😊 سؤالك عن "${message.substring(0, 50)}" مهم جداً. أنا هنا لمساعدتك في أي تفاصيل إضافية تريد معرفتها.`,
-                `فهمت سؤالك! 📝 "${message.substring(0, 50)}" - دعني أفكر في إجابة مفيدة لك... هل يمكنك توضيح أكثر لأعطيك إجابة أفضل؟`,
-                `شكراً على سؤالك! 🎯 بما أنني أعمل بشكل فوري بدون تحميل، فأنا جاهز للإجابة عن أي استفسار. هل تريد مني شرح موضوع معين؟`,
-                `أرى أنك تسأل عن "${message.substring(0, 40)}". هذا مجال مثير للاهتمام! 🚀 هل تود أن أشرح لك المزيد من التفاصيل؟`
-            ];
-            return responses[Math.floor(Math.random() * responses.length)];
-        }
-
-        // ========== عناصر الواجهة ==========
-        const messagesContainer = document.getElementById('messagesContainer');
-        const messageInput = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const newChatBtn = document.getElementById('newChatBtn');
-        const conversationsList = document.getElementById('conversationsList');
-        const themeToggle = document.getElementById('themeToggle');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.getElementById('sidebar');
-
-        // ========== وظائف ==========
-        function addMessage(role, content) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}`;
-            messageDiv.innerHTML = `
-                <div class="message-wrapper">
-                    <div class="message-avatar">
-                        <i class="fas ${role === 'user' ? 'fa-user' : 'fa-robot'}"></i>
-                    </div>
-                    <div class="message-content">${formatContent(content)}</div>
-                </div>
-            `;
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            
-            currentConversation.messages.push({ role, content });
-            saveConversations();
-            updateConversationsList();
-        }
-        
-        function formatContent(text) {
-            return text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        }
-        
-        function addTypingIndicator() {
-            const indicator = document.createElement('div');
-            indicator.className = 'message assistant';
-            indicator.id = 'typingIndicator';
-            indicator.innerHTML = `
-                <div class="message-wrapper">
-                    <div class="message-avatar"><i class="fas fa-robot"></i></div>
-                    <div class="typing-indicator">
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                    </div>
-                </div>
-            `;
-            messagesContainer.appendChild(indicator);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-        
-        function removeTypingIndicator() {
-            const indicator = document.getElementById('typingIndicator');
-            if (indicator) indicator.remove();
-        }
-        
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message || isWaiting) return;
-            
-            messageInput.value = '';
-            addMessage('user', message);
-            
-            isWaiting = true;
-            addTypingIndicator();
-            
-            // محاكاة تأخير قصير للطبيعية
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            const response = await callAIService(message, currentConversation.messages);
-            
-            removeTypingIndicator();
-            addMessage('assistant', response);
-            isWaiting = false;
-            
-            messageInput.style.height = 'auto';
-        }
-        
-        function saveConversations() {
-            const toSave = conversations.map(c => ({
-                id: c.id,
-                title: c.title,
-                messages: c.messages.slice(-50)
-            }));
-            localStorage.setItem('ai_chat_zero_conversations', JSON.stringify(toSave));
-            localStorage.setItem('ai_chat_zero_current', currentConversation.id);
-        }
-        
-        function loadConversations() {
-            const saved = localStorage.getItem('ai_chat_zero_conversations');
-            if (saved) {
-                try {
-                    conversations = JSON.parse(saved);
-                    const currentId = localStorage.getItem('ai_chat_zero_current');
-                    const found = conversations.find(c => c.id == currentId);
-                    if (found) {
-                        currentConversation = found;
-                    } else if (conversations.length > 0) {
-                        currentConversation = conversations[0];
-                    }
-                    renderCurrentConversation();
-                } catch(e) {}
-            }
-            updateConversationsList();
-        }
-        
-        function renderCurrentConversation() {
-            messagesContainer.innerHTML = '';
-            for (const msg of currentConversation.messages) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${msg.role}`;
-                messageDiv.innerHTML = `
-                    <div class="message-wrapper">
-                        <div class="message-avatar">
-                            <i class="fas ${msg.role === 'user' ? 'fa-user' : 'fa-robot'}"></i>
-                        </div>
-                        <div class="message-content">${formatContent(msg.content)}</div>
-                    </div>
-                `;
-                messagesContainer.appendChild(messageDiv);
-            }
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-        
-        function updateConversationsList() {
-            if (conversations.length === 0) {
-                conversationsList.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">لا توجد محادثات</div>';
-                return;
-            }
-            
-            conversationsList.innerHTML = conversations.map(conv => `
-                <div class="conv-item ${conv.id === currentConversation.id ? 'active' : ''}" data-id="${conv.id}">
-                    <i class="fas fa-comment"></i>
-                    <span>${conv.title.length > 25 ? conv.title.substring(0, 25) + '...' : conv.title}</span>
-                </div>
-            `).join('');
-            
-            document.querySelectorAll('.conv-item').forEach(el => {
-                el.addEventListener('click', () => {
-                    const id = parseInt(el.dataset.id);
-                    const found = conversations.find(c => c.id === id);
-                    if (found) {
-                        currentConversation = found;
-                        renderCurrentConversation();
-                        updateConversationsList();
-                    }
-                });
+            // استخدام نموذج Llama 3.2 1B Instruct (خفي، مناسب للمتصفح)
+            // يمكن تغييره إلى 'Xenova/Llama-3.2-3B-Instruct' للأجهزة القوية
+            model = await pipeline('text-generation', 'Xenova/Llama-3.2-1B-Instruct', {
+                device: 'wasm',  // استخدام WebAssembly للتوافق مع جميع المتصفحات
+                dtype: 'q4'      // تقليل حجم النموذج
             });
-        }
-        
-        function newConversation() {
-            currentConversation = {
-                id: Date.now(),
-                title: `محادثة ${new Date().toLocaleTimeString()}`,
-                messages: []
-            };
-            conversations.unshift(currentConversation);
-            renderCurrentConversation();
-            updateConversationsList();
-            saveConversations();
             
-            addMessage('assistant', '✨ محادثة جديدة! كيف يمكنني مساعدتك اليوم؟ اسأل أي شيء وأنا هنا للإجابة 🚀');
+            modelReady = true;
+            completeProgress();
+            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> Llama 3.2 جاهز ✅';
+            
+            addAssistantMessage('✅ النموذج جاهز! يمكنك الآن سؤالي أي شيء. Llama 3.2 يتفهم العربية والإنجليزية ويجيب بذكاء.');
+            
+        } catch(error) {
+            console.error('فشل تحميل النموذج:', error);
+            statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> فشل التحميل، استخدم الوضع المبسط';
+            completeProgress();
+            modelReady = false;
+            addAssistantMessage('⚠️ فشل تحميل النموذج. تأكد من اتصالك بالإنترنت وحاول تحديث الصفحة.');
         }
-        
-        // ========== الأحداث ==========
-        sendBtn.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-        
-        messageInput.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-        });
-        
-        newChatBtn.addEventListener('click', newConversation);
-        
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark');
-            const icon = themeToggle.querySelector('i');
-            icon.className = document.body.classList.contains('dark') ? 'fas fa-sun' : 'fas fa-moon';
-        });
-        
-        sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
-        
-        // إغلاق السايدبار على الجوال
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768) {
-                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                    sidebar.classList.remove('open');
+    }
+    
+    // ------------------ دوال مساعدة للمعادلات الرياضية ------------------
+    function solveBasicEquation(text) {
+        // معادلات بسيطة مثل 2x+5=13
+        try {
+            const eqMatch = text.match(/([+-]?\d*\.?\d*)\s*\*?\s*x\s*([+-]\s*\d+\.?\d*)?\s*=\s*([+-]?\d+\.?\d*)/i);
+            if (eqMatch) {
+                let a = parseFloat(eqMatch[1]) || 1;
+                let b = parseFloat(eqMatch[2]) || 0;
+                let c = parseFloat(eqMatch[3]);
+                if (a !== 0) {
+                    let x = (c - b) / a;
+                    return `🧮 حل المعادلة: x = ${x}`;
                 }
             }
-        });
+            return null;
+        } catch(e) { return null; }
+    }
+    
+    // ------------------ توليد الرد باستخدام Llama ------------------
+    async function generateResponse(userMessage, history) {
+        // 1. محاولة حل معادلة رياضية أولاً
+        const eqResult = solveBasicEquation(userMessage);
+        if (eqResult) return eqResult;
         
-        // ========== بدء التشغيل ==========
-        loadConversations();
-        if (conversations.length === 0) {
-            newConversation();
+        if (!modelReady || !model) {
+            return "⚠️ النموذج لا يزال قيد التحميل. انتظر قليلاً ثم حاول مرة أخرى.";
         }
         
-        // تحديث عنوان المحادثة تلقائياً من أول رسالة
-        const updateTitle = setInterval(() => {
-            if (currentConversation.messages.length > 0 && currentConversation.title === `محادثة ${new Date().toLocaleTimeString()}`) {
-                const firstUserMsg = currentConversation.messages.find(m => m.role === 'user');
-                if (firstUserMsg) {
-                    currentConversation.title = firstUserMsg.content.substring(0, 30);
-                    saveConversations();
-                    updateConversationsList();
-                }
+        try {
+            // بناء السياق من المحادثة السابقة (آخر 4 رسائل)
+            let context = "";
+            const recent = history.slice(-4);
+            for (const msg of recent) {
+                context += `${msg.role === 'user' ? 'المستخدم' : 'المساعد'}: ${msg.content}\n`;
             }
-        }, 1000);
-    </script>
+            
+            // إضافة تعليمات النظام (System Prompt)
+            const systemPrompt = `أنت Llama 3.2، مساعد ذكي يتحدث العربية بطلاقة. أنت ودود ومفيد ودقيق. تجيب على الأسئلة بشكل مختصر وواضح. إذا سُئلت عن شيء لا تعرفه، قل ذلك بصراحة.`;
+            
+            const fullPrompt = `${systemPrompt}\n\n${context}المستخدم: ${userMessage}\nالمساعد:`;
+            
+            const response = await model(fullPrompt, {
+                max_new_tokens: 512,
+                temperature: 0.7,
+                top_p: 0.9,
+                do_sample: true
+            });
+            
+            let generated = response[0]?.generated_text || '';
+            // استخراج الجزء بعد "المساعد:"
+            let answer = generated.split('المساعد:').pop();
+            answer = answer?.trim();
+            
+            if (!answer || answer.length < 2) {
+                return "عذراً، لم أستطع توليد رد. حاول إعادة صياغة سؤالك.";
+            }
+            
+            return answer;
+            
+        } catch(error) {
+            console.error('خطأ في التوليد:', error);
+            return "حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى.";
+        }
+    }
+    
+    // ------------------ إدارة المحادثة ------------------
+    let currentConversation = { id: Date.now(), messages: [] };
+    let isWaiting = false;
+    
+    function addUserMessage(content) {
+        const div = document.createElement('div');
+        div.className = 'message user';
+        div.innerHTML = `<div class="message-avatar"><i class="fas fa-user"></i></div><div class="message-content">${escapeHtml(content)}</div>`;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        currentConversation.messages.push({ role: 'user', content });
+        saveConversation();
+    }
+    
+    function addAssistantMessage(content) {
+        const div = document.createElement('div');
+        div.className = 'message assistant';
+        div.innerHTML = `<div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-content">${formatContent(content)}</div>`;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        currentConversation.messages.push({ role: 'assistant', content });
+        saveConversation();
+    }
+    
+    function formatContent(text) {
+        return text.replace(/\n/g, '<br>').replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function addTypingIndicator() {
+        const typing = document.createElement('div');
+        typing.className = 'message assistant';
+        typing.id = 'typing';
+        typing.innerHTML = `<div class="message-avatar"><i class="fas fa-robot"></i></div><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+        messagesDiv.appendChild(typing);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    function removeTypingIndicator() {
+        const t = document.getElementById('typing');
+        if (t) t.remove();
+    }
+    
+    async function sendMessage() {
+        const text = inputField.value.trim();
+        if (!text || isWaiting) return;
+        
+        inputField.value = '';
+        addUserMessage(text);
+        isWaiting = true;
+        addTypingIndicator();
+        
+        // تأخير بسيط للطبيعة
+        await new Promise(r => setTimeout(r, 300));
+        
+        const reply = await generateResponse(text, currentConversation.messages);
+        
+        removeTypingIndicator();
+        addAssistantMessage(reply);
+        isWaiting = false;
+        
+        if (currentConversation.messages.length === 2 && currentConversation.title === 'محادثة جديدة') {
+            currentConversation.title = text.substring(0, 30);
+            saveConversation();
+        }
+    }
+    
+    function saveConversation() {
+        let convs = JSON.parse(localStorage.getItem('llama_conversations') || '[]');
+        const existingIndex = convs.findIndex(c => c.id === currentConversation.id);
+        if (existingIndex !== -1) convs[existingIndex] = currentConversation;
+        else convs.unshift(currentConversation);
+        localStorage.setItem('llama_conversations', JSON.stringify(convs.slice(0, 20)));
+        localStorage.setItem('llama_current', currentConversation.id);
+    }
+    
+    function loadConversation() {
+        const currentId = localStorage.getItem('llama_current');
+        const convs = JSON.parse(localStorage.getItem('llama_conversations') || '[]');
+        const found = convs.find(c => c.id == currentId);
+        if (found) {
+            currentConversation = found;
+            messagesDiv.innerHTML = '';
+            for (const msg of currentConversation.messages) {
+                const div = document.createElement('div');
+                div.className = `message ${msg.role}`;
+                div.innerHTML = `<div class="message-avatar"><i class="fas ${msg.role === 'user' ? 'fa-user' : 'fa-robot'}"></i></div><div class="message-content">${formatContent(msg.content)}</div>`;
+                messagesDiv.appendChild(div);
+            }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    }
+    
+    function newConversation() {
+        currentConversation = { id: Date.now(), title: 'محادثة جديدة', messages: [] };
+        messagesDiv.innerHTML = '';
+        addAssistantMessage('🦙 محادثة جديدة! أنا Llama 3.2. اسألني أي شيء وسأجيبك.');
+        saveConversation();
+    }
+    
+    // ------------------ أحداث التشغيل ------------------
+    sendBtn.addEventListener('click', sendMessage);
+    inputField.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    document.getElementById('newChatBtn')?.addEventListener('click', newConversation);
+    
+    // ضبط ارتفاع حقل الإدخال تلقائياً
+    inputField.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+    
+    // زر المحادثة الجديدة في الشريط الجانبي (أضفه يدوياً إذا لم يكن موجوداً)
+    const newChatBtn = document.createElement('button');
+    newChatBtn.className = 'new-chat-btn';
+    newChatBtn.innerHTML = '<i class="fas fa-plus"></i> محادثة جديدة';
+    newChatBtn.style.cssText = 'margin-top: 20px; width: 100%; background: #facc15; border: none; border-radius: 40px; padding: 10px; font-weight: bold; cursor: pointer;';
+    newChatBtn.addEventListener('click', newConversation);
+    document.querySelector('.sidebar-header')?.appendChild(newChatBtn);
+    
+    // بدء التشغيل
+    loadConversation();
+    loadLlamaModel();
+</script>
 </body>
 </html>
-        
