@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Studio - ذكاء اصطناعي مجاني | قراءة PDF والصور والمحادثة</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>AI Studio | ذكاء اصطناعي مجاني - PDF والصور والمحادثة</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.js"></script>
@@ -28,7 +28,6 @@
             color: white;
         }
 
-        /* شريط التنقل */
         .navbar {
             background: rgba(15, 25, 45, 0.8);
             backdrop-filter: blur(12px);
@@ -86,7 +85,6 @@
             50% { opacity: 0.4; }
         }
 
-        /* الحاوية الرئيسية */
         .container {
             display: flex;
             max-width: 1600px;
@@ -96,7 +94,6 @@
             min-height: calc(100vh - 80px);
         }
 
-        /* الشريط الجانبي للملفات */
         .sidebar {
             width: 320px;
             background: rgba(20, 30, 55, 0.5);
@@ -186,7 +183,6 @@
             font-size: 16px;
         }
 
-        /* منطقة المحادثة */
         .chat-area {
             flex: 1;
             display: flex;
@@ -244,7 +240,6 @@
             border: 1px solid rgba(255, 180, 71, 0.3);
         }
 
-        /* منطقة الإدخال */
         .chat-input-area {
             padding: 20px;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -332,7 +327,6 @@
     </nav>
 
     <div class="container">
-        <!-- الشريط الجانبي -->
         <div class="sidebar">
             <h3><i class="fas fa-cloud-upload-alt"></i> رفع الملفات</h3>
             <div class="upload-area" id="uploadArea">
@@ -350,7 +344,6 @@
             </div>
         </div>
 
-        <!-- منطقة المحادثة -->
         <div class="chat-area">
             <div class="chat-messages" id="chatMessages">
                 <div class="message">
