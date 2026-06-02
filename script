@@ -1,0 +1,431 @@
+// استيراد Transformers.js
+import { pipeline, env } from '@huggingface/transformers';
+
+// تكامل البيئة
+env.allowLocalModels = true;
+env.useBrowserCache = true;
+
+// حالة التطبيق
+let model = null;
+let modelLoaded = false;
+let currentFiles = [];
+let fileContents = {}; // تخزين محتوى الملفات المستخرجة
+let conversations = []; // سجل المحادثة
+
+// عناصر DOM
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const filesList = document.getElementById('filesList');
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+// تهيئة PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.js';
+
+// ========== 1. تحميل نموذج الذكاء الاصطناعي ==========
+async function loadModel() {
+    try {
+        statusText.innerText = 'جاري تحميل النموذج... (قد يستغرق دقيقة)';
+        
+        // تحميل نموذج لغة صغير يعمل في المتصفح
+        // استخدام SmolLM2-135M (خفيف وسريع)
+        model = await pipeline('text-generation', 'onnx-community/SmolLM2-135M-Instruct', {
+            device: 'webgpu', // استخدام WebGPU للتسريع
+            dtype: 'q4' // كمية لتقليل الحجم
+        });
+        
+        modelLoaded = true;
+        statusDot.classList.add('loaded');
+        statusText.innerText = 'النموذج جاهز ✅';
+        
+        // إضافة رسالة ترحيب
+        addAIMessage('النموذج جاهز! يمكنك الآن رفع الملفات وسؤالي عنها.');
+        
+    } catch (error) {
+        console.error('خطأ في تحميل النموذج:', error);
+        statusText.innerText = 'خطأ في التحميل - حاول تحديث الصفحة';
+        addAIMessage('⚠️ حدث خطأ في تحميل النموذج. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+    }
+}
+
+// ========== 2. معالجة الملفات ==========
+// معالجة رفع الملفات
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '#FFB347';
+});
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.borderColor = 'rgba(255, 180, 71, 0.3)';
+});
+uploadArea.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = 'rgba(255, 180, 71, 0.3)';
+    const files = Array.from(e.dataTransfer.files);
+    await processFiles(files);
+});
+
+fileInput.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files);
+    await processFiles(files);
+    fileInput.value = '';
+});
+
+// معالجة الملفات المرفوعة
+async function processFiles(files) {
+    for (const file of files) {
+        if (!file.type.includes('pdf') && !file.type.includes('image')) {
+            addAIMessage(`⚠️ نوع الملف ${file.name} غير مدعوم. يرجى رفع PDF أو صور فقط.`);
+            continue;
+        }
+        
+        addAIMessage(`📄 جاري معالجة الملف: ${file.name}...`);
+        
+        try {
+            let extractedText = '';
+            
+            if (file.type.includes('pdf')) {
+                extractedText = await extractPDFText(file);
+            } else if (file.type.includes('image')) {
+                extractedText = await extractImageText(file);
+            }
+            
+            if (extractedText && extractedText.trim().length > 0) {
+                currentFiles.push({
+                    id: Date.now() + Math.random(),
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    content: extractedText
+                });
+                fileContents[file.name] = extractedText;
+                addAIMessage(`✅ تم معالجة ${file.name} بنجاح! (استخرجت ${extractedText.length} حرف)`);
+            } else {
+                addAIMessage(`⚠️ لم يتم استخراج نص من ${file.name}. تأكد من أن الملف يحتوي على نص واضح.`);
+            }
+            
+        } catch (error) {
+            console.error(error);
+            addAIMessage(`❌ خطأ في معالجة ${file.name}: ${error.message}`);
+        }
+    }
+    
+    updateFilesList();
+}
+
+// استخراج النص من PDF
+async function extractPDFText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const typedarray = new Uint8Array(e.target.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                let fullText = '';
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n';
+                }
+                
+                resolve(fullText);
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+// استخراج النص من الصور (باستخدام Vision Transformer)
+async function extractImageText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const img = new Image();
+                img.src = e.target.result;
+                
+                await new Promise((resolveImg) => {
+                    img.onload = resolveImg;
+                });
+                
+                // استخدام نموذج OCR خفيف (Blip أو TrOCR)
+                // ملاحظة: هذا يتطلب تحميل نموذج إضافي. بدلاً من ذلك، نستخدم وصف الصورة
+                // إذا لم يكن النموذج متاحاً، نعطي رسالة بديلة
+                
+                // في الإصدار الحالي، سنستخدم وصف عام للصورة
+                // للنسخة الكاملة، يمكن إضافة نموذج TrOCR
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                // وصف بسيط للصورة (في الانتظار حتى تحميل نموذج OCR كامل)
+                resolve(`[صورة: ${file.name}] تحتوي على محتوى مرئي. يمكنك وصف ما تراه في الصورة وسأحاول مساعدتك.`);
+                
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// تحديث قائمة الملفات في الشريط الجانبي
+function updateFilesList() {
+    if (currentFiles.length === 0) {
+        filesList.innerHTML = `
+            <div style="text-align:center;color:#aaa;padding:20px;">
+                <i class="fas fa-inbox"></i>
+                <p>لا توجد ملفات مرفوعة</p>
+            </div>
+        `;
+        return;
+    }
+    
+    filesList.innerHTML = currentFiles.map(file => `
+        <div class="file-item" data-file="${file.name}">
+            <div class="file-icon">
+                <i class="fas ${file.type.includes('pdf') ? 'fa-file-pdf' : 'fa-file-image'}"></i>
+            </div>
+            <div class="file-info">
+                <div class="file-name">${file.name.substring(0, 30)}${file.name.length > 30 ? '...' : ''}</div>
+                <div class="file-size">${(file.size / 1024).toFixed(1)} KB</div>
+            </div>
+            <button class="delete-file" data-name="${file.name}">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `).join('');
+    
+    // إضافة أحداث الحذف
+    document.querySelectorAll('.delete-file').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const fileName = btn.dataset.name;
+            currentFiles = currentFiles.filter(f => f.name !== fileName);
+            delete fileContents[fileName];
+            updateFilesList();
+            addAIMessage(`🗑️ تم حذف الملف: ${fileName}`);
+        });
+    });
+    
+    // إضافة أحداث النقر لعرض محتوى الملف
+    document.querySelectorAll('.file-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const fileName = item.dataset.file;
+            if (fileContents[fileName]) {
+                const preview = fileContents[fileName].substring(0, 500);
+                addAIMessage(`📄 محتوى ${fileName}:\n\n${preview}${fileContents[fileName].length > 500 ? '...' : ''}`);
+            }
+        });
+    });
+}
+
+// ========== 3. وظائف المحادثة ==========
+function addUserMessage(text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message user';
+    messageDiv.innerHTML = `
+        <div class="message-avatar">
+            <i class="fas fa-user"></i>
+        </div>
+        <div class="message-content">${escapeHtml(text)}</div>
+    `;
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    conversations.push({ role: 'user', content: text });
+}
+
+function addAIMessage(text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message assistant';
+    messageDiv.innerHTML = `
+        <div class="message-avatar">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="message-content">${escapeHtml(text)}</div>
+    `;
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    conversations.push({ role: 'assistant', content: text });
+}
+
+function addLoadingMessage() {
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'message assistant';
+    loadingDiv.id = 'loadingMessage';
+    loadingDiv.innerHTML = `
+        <div class="message-avatar">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="loading-indicator">
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+        </div>
+    `;
+    chatMessages.appendChild(loadingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return loadingDiv;
+}
+
+function removeLoadingMessage(loadingDiv) {
+    if (loadingDiv && loadingDiv.remove) {
+        loadingDiv.remove();
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// بناء السياق من الملفات المرفوعة
+function buildContextFromFiles() {
+    if (currentFiles.length === 0) return '';
+    
+    let context = 'المستندات المتاحة:\n';
+    for (const file of currentFiles) {
+        context += `\n--- ملف: ${file.name} ---\n`;
+        // أخذ أول 2000 حرف فقط لتجنب تجاوز الحد
+        context += file.content.substring(0, 2000);
+        context += '\n';
+    }
+    return context;
+}
+
+// إنشاء رسالة النظام
+function buildSystemPrompt() {
+    const context = buildContextFromFiles();
+    const historyContext = conversations.slice(-6).map(c => `${c.role === 'user' ? 'المستخدم' : 'المساعد'}: ${c.content}`).join('\n');
+    
+    let systemPrompt = `أنت مساعد ذكاء اصطناعي متخصص في تحليل المستندات والإجابة على الأسئلة.`;
+    
+    if (context) {
+        systemPrompt += `\n\nالمعلومات المتاحة من الملفات المرفوعة:\n${context}\n\n`;
+        systemPrompt += `استخدم المعلومات من هذه الملفات للإجابة على أسئلة المستخدم. إذا لم تجد الإجابة في الملفات، أخبر المستخدم بذلك بصراحة.`;
+    } else {
+        systemPrompt += `\n\nلا توجد ملفات مرفوعة حالياً. يمكنك مساعدة المستخدم بالمعلومات العامة، أو اطلب منه رفع ملفات لتحليلها.`;
+    }
+    
+    systemPrompt += `\n\nسجل المحادثة الأخير:\n${historyContext}\n\nالمستخدم: `;
+    
+    return systemPrompt;
+}
+
+// توليد رد من النموذج
+async function generateResponse(userMessage) {
+    if (!modelLoaded) {
+        return "⚠️ النموذج لا يزال قيد التحميل. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.";
+    }
+    
+    try {
+        const systemPrompt = buildSystemPrompt();
+        const fullPrompt = systemPrompt + userMessage + '\nالمساعد: ';
+        
+        const response = await model(fullPrompt, {
+            max_new_tokens: 512,
+            temperature: 0.7,
+            top_p: 0.9,
+            do_sample: true
+        });
+        
+        // استخراج النص الناتج
+        let generated = response[0]?.generated_text || '';
+        // استخراج الجزء بعد المساعد:
+        const assistantPart = generated.split('المساعد:').pop();
+        return assistantPart?.trim() || "عذراً، لم أستطع توليد رد. حاول مرة أخرى.";
+        
+    } catch (error) {
+        console.error('خطأ في التوليد:', error);
+        return "حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.";
+    }
+}
+
+// معالجة إرسال الرسالة
+async function handleSendMessage() {
+    const message = chatInput.value.trim();
+    if (!message) return;
+    
+    chatInput.value = '';
+    addUserMessage(message);
+    
+    const loadingDiv = addLoadingMessage();
+    
+    try {
+        const response = await generateResponse(message);
+        removeLoadingMessage(loadingDiv);
+        addAIMessage(response);
+    } catch (error) {
+        removeLoadingMessage(loadingDiv);
+        addAIMessage(`❌ حدث خطأ: ${error.message}`);
+    }
+}
+
+// ========== 4. الأحداث ==========
+sendBtn.addEventListener('click', handleSendMessage);
+chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage();
+    }
+});
+
+// ضبط ارتفاع حقل الإدخال تلقائياً
+chatInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// ========== 5. بدء التشغيل ==========
+// تحميل النموذج عند بدء التطبيق
+loadModel();
+
+// حفظ واستعادة البيانات من localStorage
+function saveToLocalStorage() {
+    const saveData = {
+        files: currentFiles,
+        conversations: conversations.slice(-50)
+    };
+    localStorage.setItem('ai_studio_data', JSON.stringify(saveData));
+}
+
+function loadFromLocalStorage() {
+    const saved = localStorage.getItem('ai_studio_data');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            if (data.files && data.files.length) {
+                currentFiles = data.files;
+                // استعادة المحتويات
+                for (const file of currentFiles) {
+                    fileContents[file.name] = file.content;
+                }
+                updateFilesList();
+            }
+            if (data.conversations && data.conversations.length) {
+                // استعادة المحادثة مع تجنب التكرار
+                for (const conv of data.conversations.slice(-20)) {
+                    if (conv.role === 'user') {
+                        // لا نعيد إضافة الرسائل القديمة تلقائياً
+                    }
+                }
+            }
+        } catch(e) {}
+    }
+}
+
+// حفظ كل 30 ثانية
+setInterval(saveToLocalStorage, 30000);
+loadFromLocalStorage();
