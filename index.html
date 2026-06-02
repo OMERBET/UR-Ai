@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Studio - ذكاء اصطناعي مجاني | قراءة PDF والصور والمحادثة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "@huggingface/transformers": "https://unpkg.com/@huggingface/transformers@3.0.0-beta.4/dist/transformers.js"
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0f1e 0%, #0f172a 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        /* شريط التنقل */
+        .navbar {
+            background: rgba(15, 25, 45, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 180, 71, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .logo i {
+            color: #FFB347;
+            font-size: 28px;
+        }
+
+        .logo span {
+            color: #FFB347;
+        }
+
+        .status-badge {
+            background: rgba(255, 180, 71, 0.15);
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.loaded {
+            background: #44ff44;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* الحاوية الرئيسية */
+        .container {
+            display: flex;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 25px;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* الشريط الجانبي للملفات */
+        .sidebar {
+            width: 320px;
+            background: rgba(20, 30, 55, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #FFB347;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 180, 71, 0.3);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 25px;
+        }
+
+        .upload-area:hover {
+            border-color: #FFB347;
+            background: rgba(255, 180, 71, 0.05);
+        }
+
+        .upload-area i {
+            font-size: 48px;
+            color: #FFB347;
+            margin-bottom: 10px;
+        }
+
+        .files-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .file-item:hover {
+            background: rgba(255, 180, 71, 0.1);
+        }
+
+        .file-item.active {
+            background: rgba(255, 180, 71, 0.2);
+            border-right: 3px solid #FFB347;
+        }
+
+        .file-icon {
+            font-size: 24px;
+        }
+
+        .file-info {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .file-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .file-size {
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        .delete-file {
+            background: none;
+            border: none;
+            color: #ff5555;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* منطقة المحادثة */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(15, 25, 45, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 15px;
+            max-width: 85%;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFB347, #FF7E05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message.user .message-avatar {
+            background: #2a2a4a;
+        }
+
+        .message-content {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 12px 18px;
+            border-radius: 20px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #FFB34720, #FF7E0520);
+            border: 1px solid rgba(255, 180, 71, 0.3);
+        }
+
+        /* منطقة الإدخال */
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 60px;
+            padding: 14px 20px;
+            color: white;
+            font-size: 16px;
+            resize: none;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #FFB347;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #FFB347, #FF7E05);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 12px 18px;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background: #FFB347;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .message {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-brain"></i>
+            <span>AI</span> Studio
+        </div>
+        <div class="status-badge" id="statusBadge">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">جاري تحميل النموذج...</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- الشريط الجانبي -->
+        <div class="sidebar">
+            <h3><i class="fas fa-cloud-upload-alt"></i> رفع الملفات</h3>
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-file-upload"></i>
+                <p>اسحب الملفات أو انقر للرفع</p>
+                <small style="color:#aaa;">يدعم: PDF, JPG, PNG, JPEG</small>
+                <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+            </div>
+            <h3><i class="fas fa-folder-open"></i> ملفاتي</h3>
+            <div class="files-list" id="filesList">
+                <div style="text-align:center;color:#aaa;padding:20px;">
+                    <i class="fas fa-inbox"></i>
+                    <p>لا توجد ملفات مرفوعة</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- منطقة المحادثة -->
+        <div class="chat-area">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        مرحباً! أنا مساعدك الذكي 👋<br>
+                        يمكنك رفع ملفات PDF أو صور، وسأقرأها وأجيب على أسئلتك بناءً على محتواها.<br>
+                        <strong>ملاحظة:</strong> النموذج يعمل مباشرة في متصفحك - مجاني وخاص تماماً!
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <textarea class="chat-input" id="chatInput" placeholder="اكتب سؤالك هنا..." rows="1"></textarea>
+                <button class="send-btn" id="sendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
